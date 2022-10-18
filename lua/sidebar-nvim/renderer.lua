@@ -48,6 +48,8 @@ end
 
 local function build_section_title(section)
     local icon = "#"
+    local title = section.title
+
     if section.icon ~= nil then
         icon = section.icon
     end
@@ -56,7 +58,11 @@ local function build_section_title(section)
         icon = icon()
     end
 
-    return icon .. " " .. section.title
+    if type(title) == "function" then
+        title = title()
+    end
+
+    return " " .. icon .. " " .. title
 end
 
 local function build_section_separator(section, index)
@@ -111,7 +117,7 @@ local function get_lines_and_hl(sections_data)
         table.insert(lines, section_title)
 
         for _, line in ipairs(section_title_separator) do
-            table.insert(hl, { "SidebarNvimSectionTitleSeperator", #lines, 0, #line })
+            table.insert(hl, { "SidebarNvimSectionTitleSeparator", #lines, 0, #line })
             table.insert(lines, line)
         end
 

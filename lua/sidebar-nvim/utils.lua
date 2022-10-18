@@ -2,6 +2,7 @@ local M = {}
 local api = vim.api
 local luv = vim.loop
 
+
 function M.echo_warning(msg)
     api.nvim_command("echohl WarningMsg")
     api.nvim_command("echom '[SidebarNvim] " .. msg:gsub("'", "''") .. "'")
@@ -115,14 +116,17 @@ function M.truncate(s, size)
     end
 end
 
-function M.async_cmd(cmd, args, callback)
+-- execute async command and parse result into loclist items
+function M.async_cmd(command, args, callback)
     local stdout = luv.new_pipe(false)
     local stderr = luv.new_pipe(false)
-    local handle
+    local chunks = {}
 
-    handle = luv.spawn(cmd, { args = args, stdio = { nil, stdout, stderr }, cwd = luv.cwd() }, function()
+    local handle
+    handle = luv.spawn(command, { args = args, stdio = { nil, stdout, stderr }, cwd = luv.cwd() }, function()
+
         if callback then
-            callback()
+            callback(chunks)
         end
 
         luv.read_stop(stdout)
@@ -132,19 +136,23 @@ function M.async_cmd(cmd, args, callback)
         handle:close()
     end)
 
-    luv.read_start(stdout, function(err, _)
+    luv.read_start(stdout, function(err, data)
         if err ~= nil then
             vim.schedule(function()
                 M.echo_warning(err)
             end)
         end
+
+        if data == nil then
+            return
+        end
+
+        table.insert(chunks, data)
     end)
 
     luv.read_start(stderr, function(err, data)
-        if data ~= nil then
-            vim.schedule(function()
-                M.echo_warning(data)
-            end)
+        if data == nil then
+            return
         end
 
         if err ~= nil then
