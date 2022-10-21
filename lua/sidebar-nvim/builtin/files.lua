@@ -262,6 +262,24 @@ local function move_file(src, dest, confirm_overwrite)
         end
     end)
 end
+
+local function open_file(line)
+    local location = loclist:get_location_at(line)
+    if location == nil then
+        return
+    end
+
+    if location.type == "file" then
+        vim.cmd("wincmd p")
+        vim.cmd("e " .. location.node.path)
+    else
+        if open_directories[location.node.path] == nil then
+            open_directories[location.node.path] = true
+        else
+            open_directories[location.node.path] = nil
+        end
+    end
+end
 return {
     title = "Files",
     icon = config["files"].icon,
@@ -293,7 +311,6 @@ return {
 
         return { lines = lines, hl = hl }
     end,
-
     highlights = {
         groups = {},
         links = {
@@ -453,23 +470,7 @@ return {
             exec(group)
         end,
         -- open current file
-        ["e"] = function(line)
-            local location = loclist:get_location_at(line)
-            if location == nil then
-                return
-            end
-
-            if location.type == "file" then
-                vim.cmd("wincmd p")
-                vim.cmd("e " .. location.node.path)
-            else
-                if open_directories[location.node.path] == nil then
-                    open_directories[location.node.path] = true
-                else
-                    open_directories[location.node.path] = nil
-                end
-            end
-        end,
+        ["e"] = open_file,
         -- rename
         ["r"] = function(line)
             local location = loclist:get_location_at(line)
