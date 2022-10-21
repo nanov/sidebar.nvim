@@ -17,13 +17,13 @@ Loclist.DEFAULT_OPTIONS = {
     -- highlight groups for each control element
     highlights = {
         group = "SidebarNvimLabel",
-        group_count = "SidebarNvimSectionTitle",
+        group_count = "SidebarNvimLabelCount",
     },
     -- initial indentation level
     indent = nil,
     -- where to truncate, if applicable ("left" or "right")
     truncate = nil,
-    -- the minimum width to truncate at
+    -- the minimum width to conserve for the truncated section
     truncate_minimum = nil,
 }
 
@@ -158,6 +158,7 @@ function Loclist:draw_group(ctx, group_name, with_label, section_lines, section_
         end
 
         table.insert(section_hl, { self.highlights.group, #section_lines, 0, #line })
+
         if self.show_group_count then
             table.insert(section_hl, { self.highlights.group_count, #section_lines, #line, -1 })
             local total = #group
@@ -253,6 +254,13 @@ function Loclist:draw(ctx, section_lines, section_hl)
     for _, group_name in ipairs(self._group_keys) do
         self:draw_group(ctx, group_name, true, section_lines, section_hl)
     end
+end
+
+-- returns if there is a group at the line number specified
+-- @param (number) line
+function Loclist:is_group(line)
+    local group = self._group_indexes[line]
+    return group ~= nil
 end
 
 -- returns the location specified in the location printed on line `line`
