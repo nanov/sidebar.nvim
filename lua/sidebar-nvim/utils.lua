@@ -1,7 +1,40 @@
+
 local M = {}
 local api = vim.api
 local luv = vim.loop
 
+--- Reverse the order of elements in some `list`.
+--- @param list table
+--- @return table reversed
+function M.reverse(list)
+  local reversed = {}
+  while #reversed < #list do
+    reversed[#reversed + 1] = list[#list - #reversed]
+  end
+  return reversed
+end
+
+--- Insert a value between the elements of a list
+--- @param list table
+--- @param value any
+--- @return table
+function M.intersperse(list, value)
+  local result = {}
+  for i = 1, #list - 1 do
+    table.insert(result, list[i])
+    table.insert(result, value)
+  end
+  table.insert(result, list[#list])
+  return result
+end
+
+function M.empty_message(text)
+  local line = " " .. tostring(text)
+  return {
+    lines = { line },
+    hl = { { "SidebarNvimComment", 0, 0, #line } },
+  }
+end
 
 function M.echo_warning(msg)
     api.nvim_command("echohl WarningMsg")
@@ -26,13 +59,14 @@ function M.sidebar_nvim_cursor_move_callback(direction)
 end
 
 local function get_builtin_section(name)
-    local ret, section = pcall(require, "sidebar-nvim.builtin." .. name)
+    local ret, result = pcall(require, "sidebar-nvim.builtin." .. name)
     if not ret then
         M.echo_warning("error trying to load section: " .. name)
+        M.echo_warning(tostring(result))
         return nil
     end
 
-    return section
+    return result
 end
 
 function M.resolve_section(index, section)
@@ -62,26 +96,18 @@ local function count(base, pattern)
     return select(2, string.gsub(base, pattern, ""))
 end
 
-function M.shorten_path(path, min_len)
-    if #path <= min_len then
-        return path
-    end
+local function make_path_relative_to_home(filepath)
+    return filepath:gsub(luv.os_homedir(), '~')
+end
 
-    local sep = package.config:sub(1, 1)
-
-    for _ = 0, count(path, sep) do
-        if #path <= min_len then
-            return path
-        end
-
-        -- ('([^/])[^/]+%/', '%1/', 1)
-        path = path:gsub(string.format("([^%s])[^%s]+%%%s", sep, sep, sep), "%1" .. sep, 1)
-    end
-
+function M.shorten_path(path)
+    path = make_path_relative_to_home(path)
     return path
 end
 
 function M.shortest_path(path)
+    path = make_path_relative_to_home(path)
+
     local sep = package.config:sub(1, 1)
 
     for _ = 0, count(path, sep) do
@@ -101,18 +127,13 @@ function M.filename(path)
     return split[#split]
 end
 
-function M.file_exist(path)
-    local _, err = luv.fs_stat(path)
-    return err == nil
-end
-
 function M.truncate(s, size)
     local length = #s
 
     if length <= size then
         return s
     else
-        return s:sub(1, size) .. ".."
+        return s:sub(1, size) .. "…"
     end
 end
 

@@ -12,19 +12,17 @@ local function get_fileicon(filename)
         local extension = filename:match("^.+%.(.+)$")
 
         local fileicon = ""
-        local icon, highlight = devicons.get_icon(filename, extension)
+        local icon, _ = devicons.get_icon_color(filename, extension)
         if icon then
             fileicon = icon
         end
 
-        if not highlight then
-            highlight = "SidebarNvimNormal"
-        end
+        local highlight = "SidebarNvimNormal"
 
-        return {
-            text = "  " .. fileicon .. " ",
-            hl = highlight,
-        }
+        if extension then
+            highlight = "DevIcon" .. extension
+        end
+        return { text = "  " .. fileicon .. " ", hl = highlight }
     else
         return { text = "   " }
     end
@@ -106,7 +104,7 @@ local function get_buffers(ctx)
     loclist:draw(ctx, lines, hl)
 
     if lines == nil or #lines == 0 then
-        return "<no buffers>"
+        return utils.empty_message("<no buffers>")
     else
         return { lines = lines, hl = hl }
     end
